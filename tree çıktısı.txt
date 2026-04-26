@@ -1,0 +1,21 @@
+ai-doc-qa/
+│
+├── main.py                 # Tüm pipeline (Colab/Jupyter çalıştırma scripti)
+│
+├── requirements.txt        # Gerekli kütüphaneler
+│
+├── README.md               # Proje açıklaması + kullanım
+│
+├── DEVLOG.md               # Geliştirme süreci (journey)
+│
+├── TESTING.md              # Test senaryoları + sonuçlar
+│
+├── modules/                # (opsiyonel ama profesyonel gösterir)
+│   ├── __init__.py
+│   ├── ocr.py              # PDF + Image text extraction
+│   ├── chunking.py         # text splitting logic
+│   ├── embedding.py        # sentence-transformers model
+│   ├── retriever.py        # cosine similarity retrieval
+│   └── qa.py               # answer generation logic
+│
+└── data/                   # upload edilen dokümanlar (opsiyonel)
