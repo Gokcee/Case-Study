@@ -129,6 +129,16 @@ streamlit run frontend/streamlit_app.py
 
 ---
 
+## Mimari
+
+- OCR → Text Extraction
+- Chunking
+- Embedding
+- Retrieval
+- Answer generation
+
+---
+
 ## 🧪 Test
 
 TESTING.md dosyasında test senaryoları ve sonuçlar detaylı olarak verilmiştir.
