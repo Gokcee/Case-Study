@@ -1,0 +1,6 @@
+sentence-transformers
+pytesseract
+pillow
+scikit-learn
+pdfplumber
+numpy
