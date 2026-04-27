@@ -1,160 +1,40 @@
-# KAYNAK KOD
-# =========================
-# 1. INSTALL (Colab için)
-# =========================
-# Eğer localde çalıştırıyorsan bu kısmı sil
-# !pip install sentence-transformers pytesseract pillow scikit-learn pdfplumber
+from services.pipeline import upload_document, ask_question
+from utils.file_utils import read_file
+import os
 
-# =========================
-# 2. IMPORTS
-# =========================
-import io
-import numpy as np
-from PIL import Image
-import pytesseract
-import pdfplumber
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+def main():
+    print("=== AI Document QA System (Local) ===")
 
-# =========================
-# 3. GLOBALS
-# =========================
-model = SentenceTransformer("all-MiniLM-L6-v2")
-documents = []
+    # Dosya yükleme
+    while True:
+        path = input("\nDosya path gir (devam etmek için 'q'): ")
 
-# =========================
-# 4. OCR & PDF PARSING
-# =========================
-def extract_text(file_bytes, filename):
-    if filename.lower().endswith(".pdf"):
-        text = ""
-        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            for page in pdf.pages:
-                text += page.extract_text() or ""
+        if path.lower() == "q":
+            break
 
-        if not text.strip():
-            return "PDF okunamadı"
-        return text
+        if not os.path.exists(path):
+            print("❌ Dosya bulunamadı, tekrar dene bro...")
+            continue
 
-    # image case
-    image = Image.open(io.BytesIO(file_bytes))
-    return pytesseract.image_to_string(image)
-
-# =========================
-# 5. CHUNKING
-# =========================
-def chunk_text(text, chunk_size=500, overlap=50):
-    chunks = []
-    for i in range(0, len(text), chunk_size - overlap):
-        chunks.append(text[i:i+chunk_size])
-    return chunks
-
-# =========================
-# 6. EMBEDDING
-# =========================
-def embed_chunks(chunks):
-    return model.encode(chunks)
-
-# =========================
-# 7. RETRIEVAL
-# =========================
-def retrieve_context(question, documents, top_k=3):
-    query_embedding = model.encode([question])
-
-    all_chunks = []
-    all_embeddings = []
-
-    for doc in documents:
-        all_chunks.extend(doc["chunks"])
-        all_embeddings.extend(doc["embeddings"])
-
-    if not all_chunks:
-        return ""
-
-    sims = cosine_similarity(query_embedding, all_embeddings)[0]
-    top_indices = np.argsort(sims)[-top_k:][::-1]
-
-    selected_chunks = [all_chunks[i] for i in top_indices]
-    return "\n".join(selected_chunks)
-
-# =========================
-# 8. ANSWER GENERATION
-# =========================
-def generate_answer(question, context):
-    if not context.strip():
-        return "Bilmiyorum, belgede bu bilgi yok."
-
-    # Basit heuristic (LLM yok)
-    return f"""
-Soru: {question}
-
-Cevap (belgeye göre):
-{context[:500]}
-"""
-
-# =========================
-# 9. PIPELINE FUNCTIONS
-# =========================
-def upload_document(file_bytes, filename):
-    print(" Metin çıkarılıyor...")
-    text = extract_text(file_bytes, filename)
-
-    print(" Chunking yapılıyor...")
-    chunks = chunk_text(text)
-
-    print(" Embedding oluşturuluyor...")
-    embeddings = embed_chunks(chunks)
-
-    documents.append({
-        "chunks": chunks,
-        "embeddings": embeddings
-    })
-
-    print(" Doküman başarıyla yüklendi!")
-
-def ask_question(question):
-    print(" Context aranıyor...")
-    context = retrieve_context(question, documents)
-
-    print("\n BULUNAN CONTEXT:\n")
-    print(context[:500])
-
-    print("\n Cevap üretiliyor...\n")
-    answer = generate_answer(question, context)
-
-    return answer
-
-# =========================
-# 10. COLAB / TERMINAL UI
-# =========================
-if __name__ == "__main__":
-    print("=== AI Document QA System ===")
-
-    # Colab için
-    try:
-        from google.colab import files
-        uploaded = files.upload()
-
-        for filename in uploaded:
-            file_bytes = uploaded[filename]
+        try:
+            file_bytes, filename = read_file(path)
             upload_document(file_bytes, filename)
+        except Exception as e:
+            print(f"❌ Hata oluştu: {e}")
 
-    except:
-        # Local için
-        path = input("Dosya path gir: ")
-        filename = path.split("/")[-1]
-
-        with open(path, "rb") as f:
-            file_bytes = f.read()
-
-        upload_document(file_bytes, filename)
-
-    # Soru loop
+    # Soru-cevap loop
     while True:
         question = input("\nSorunu yaz (çıkmak için 'q'): ")
 
         if question.lower() == "q":
+            print("👋 Çıkılıyor...")
             break
 
-        answer = ask_question(question)
-        print("\n CEVAP:\n", answer)
+        try:
+            answer = ask_question(question)
+            print("\n📌 CEVAP:\n", answer)
+        except Exception as e:
+            print(f"❌ Hata oluştu: {e}")
+
+if __name__ == "__main__":
+    main()
